@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { List, ActionPanel, Action, Icon, showToast, getPreferenceValues } from '@vicinae/api';
+import { List, ActionPanel, Action, Icon, showToast, getPreferenceValues, closeMainWindow, open, getApplications } from '@vicinae/api';
 import { homedir } from 'os';
 import path from 'path';
 import fs from 'fs/promises';
@@ -114,6 +114,7 @@ type Preferences = {
 };
 
 export default function ZenBookmarks() {
+  const prefs = getPreferenceValues<Preferences>();
   const [items, setItems] = useState<Bookmark[]>([]);
   const [isLoading, setLoading] = useState(true);
   const [zenAppId, setZenAppId] = useState<string | null>(null);
@@ -125,7 +126,6 @@ export default function ZenBookmarks() {
       try {
         // Try to resolve Zen app id dynamically from installed apps
         try {
-          const { getApplications } = await import('@vicinae/api');
           const apps = await getApplications('https://example.com');
           const zen = apps.find(a => /zen/i.test(a.name) || /zen_browser/i.test(a.id));
           if (zen) setZenAppId(zen.id);
@@ -135,7 +135,6 @@ export default function ZenBookmarks() {
         }
 
         // Preferences: allow user-specified places.sqlite path
-        const prefs = getPreferenceValues<Preferences>();
         let placesCandidate = expandUserPath(prefs.placesPath);
         if (placesCandidate) {
           try {
@@ -263,11 +262,50 @@ export default function ZenBookmarks() {
               actions={
                 <ActionPanel>
                   {zenAppId ? (
-                    <Action.Open title="Open in Zen" target={b.url} app={zenAppId} />
+                    <Action
+                      title="Open in Zen"
+                      icon={Icon.Globe}
+                      onAction={async () => {
+                        try {
+                          if (prefs.closeOnOpen !== false) {
+                            await closeMainWindow({ clearRootSearch: true });
+                          }
+                          await open(b.url, zenAppId);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                    />
                   ) : (
-                    <Action.OpenInBrowser title="Open in Browser" url={b.url} />
+                    <Action
+                      title="Open in Browser"
+                      icon={Icon.Globe}
+                      onAction={async () => {
+                        try {
+                          if (prefs.closeOnOpen !== false) {
+                            await closeMainWindow({ clearRootSearch: true });
+                          }
+                          await open(b.url);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                    />
                   )}
-                  <Action.OpenInBrowser title="Open in Default Browser" url={b.url} />
+                  <Action
+                    title="Open in Default Browser"
+                    icon={Icon.Globe}
+                    onAction={async () => {
+                      try {
+                        if (prefs.closeOnOpen !== false) {
+                          await closeMainWindow({ clearRootSearch: true });
+                        }
+                        await open(b.url);
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                  />
                   <Action.CopyToClipboard title="Copy URL" content={b.url} />
                 </ActionPanel>
               }

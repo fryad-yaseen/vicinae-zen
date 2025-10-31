@@ -23,6 +23,13 @@
           "description": "Full path to Zen profile's places.sqlite (e.g., /home/you/.var/app/app.zen_browser.zen/.zen/<profile>/places.sqlite). If you provide a directory, the command will look for places.sqlite inside it.",
           "type": "textfield",
           "required": true
+        },
+        {
+          "name": "closeOnOpen",
+          "title": "Close Vicinae on Open",
+          "description": "Close the Vicinae window before opening a bookmark.",
+          "type": "checkbox",
+          "default": true
         }
       ]
     }
